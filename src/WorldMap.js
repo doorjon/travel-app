@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { MapContainer, TileLayer, GeoJSON, useMap } from "react-leaflet";
 import L from "leaflet";
 import worldGeo from "./world.geo.json";
@@ -41,28 +41,41 @@ function useClickPopup() {
   return open;
 }
 
-function InteractiveCountries({ onChange }) {
+function InteractiveCountries({ selectionList, onChange }) {
   const [choices, setChoices] = useState({});
+
   const openPopup = useClickPopup();
+
+  // Initialize from selectionList
+  useEffect(() => {
+    const initial = {};
+    selectionList.forEach(({ country, status }) => {
+      initial[country] = status;
+    });
+    setChoices(initial);
+  }, [selectionList]);
 
   const handleClick = (e, countryName) => {
     openPopup(e.latlng, (status) => {
       const next = { ...choices, [countryName]: status };
       setChoices(next);
-      
-      onChange(
-        Object.entries(next).map(([country, status]) => ({ country, status }))
-      );
+
+      const formattedList = Object.entries(next).map(([country, status]) => ({
+        country,
+        status,
+      }));
+      onChange(formattedList);
     });
   };
 
   const style = (feature) => {
     const status = choices[feature.properties.name];
-    const fill = status === "visited"
-      ? COLOUR_VISITED
-      : status === "plan"
-      ? COLOUR_PLAN
-      : COLOUR_DEFAULT;
+    const fill =
+      status === "visited"
+        ? COLOUR_VISITED
+        : status === "plan"
+        ? COLOUR_PLAN
+        : COLOUR_DEFAULT;
 
     return {
       fillColor: fill,
@@ -92,7 +105,8 @@ function InteractiveCountries({ onChange }) {
   );
 }
 
-export default function WorldMap({ onSelectionChange }) {
+
+export default function WorldMap({ selectionList, onSelectionChange }) {
   return (
     <MapContainer
       center={[20, 0]}
@@ -104,7 +118,11 @@ export default function WorldMap({ onSelectionChange }) {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; OpenStreetMap contributors'
       />
-      <InteractiveCountries onChange={onSelectionChange} />
+      <InteractiveCountries
+        selectionList={selectionList}
+        onChange={onSelectionChange}
+      />
     </MapContainer>
   );
 }
+
