@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import WorldMap from "./WorldMap";
 
 async function fetchItinerary(country, days, interests) {
@@ -70,6 +70,10 @@ function App() {
     const saved = localStorage.getItem("countrySelections");
     return saved ? JSON.parse(saved) : [];
   });
+
+  useEffect(() => {
+    localStorage.setItem("countrySelections", JSON.stringify(list));
+  }, [list]);
 
   return (
     <>
