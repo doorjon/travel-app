@@ -16,7 +16,7 @@ async function fetchItinerary(country, days, interests) {
 
 function ItineraryForm({ countries }) {
   const [country, setCountry] = useState("");
-  const [days, setDays] = useState(7);
+  const [days, setDays] = useState();
   const [interests, setInterests] = useState("");
   const [result, setResult] = useState("");
 
@@ -59,7 +59,7 @@ function ItineraryForm({ countries }) {
         ref={textareaRef}
         value={interests}
         onInput={handleInput}
-        placeholder="Interests (e.g., food, history, lighthouses)"
+        placeholder="Interests (e.g. food, history, lighthouses)"
         className="interests-textarea"
         rows={1}
       />
