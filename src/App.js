@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import WorldMap from "./WorldMap";
 
 async function fetchItinerary(country, days, interests) {
@@ -19,6 +19,15 @@ function ItineraryForm({ countries }) {
   const [days, setDays] = useState(7);
   const [interests, setInterests] = useState("");
   const [result, setResult] = useState("");
+
+  const textareaRef = useRef(null);
+
+  const handleInput = (e) => {
+    const el = textareaRef.current;
+    el.style.height = "auto"; // Reset to auto so scrollHeight works correctly
+    el.style.height = `${el.scrollHeight}px`; // Expand to fit content
+    setInterests(e.target.value);
+  };
 
   const handleGenerate = async () => {
     const interestList = interests.split(",").map((i) => i.trim());
@@ -46,12 +55,15 @@ function ItineraryForm({ countries }) {
         placeholder="Number of days"
       />
 
-      <input
-        type="text"
+      <textarea
+        ref={textareaRef}
         value={interests}
-        onChange={(e) => setInterests(e.target.value)}
-        placeholder="Interests (e.g., food, culture)"
+        onInput={handleInput}
+        placeholder="Interests (e.g., food, history, lighthouses)"
+        className="interests-textarea"
+        rows={1}
       />
+
 
       <button onClick={handleGenerate}>Generate</button>
 
