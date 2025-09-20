@@ -8,7 +8,6 @@ from mistralai.client import MistralClient
 
 app = FastAPI()
 
-# CORS – keep your existing settings
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -17,7 +16,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ----- Request / Response models -----
 class ItineraryRequest(BaseModel):
     country: str
     days: int
@@ -26,13 +24,11 @@ class ItineraryRequest(BaseModel):
 class ItineraryResponse(BaseModel):
     itinerary: str
 
-# ----- Mistral client -----
 MISTRAL_KEY = os.getenv("MISTRAL_API_KEY")
 if not MISTRAL_KEY:
     raise RuntimeError("MISTRAL_API_KEY not found in env vars")
 client = Mistral(api_key=MISTRAL_KEY)
 
-# ----- Prompt builder -----
 SYSTEM_PROMPT = """You are an experienced travel planner.
 Create a day-by-day itinerary for the given country and number of days.
 The traveller is interested in: {interests}.
@@ -44,7 +40,6 @@ def build_user_prompt(country: str, days: int, interests: List[str]) -> str:
     interests_str = ", ".join(interests) if interests else "general sightseeing"
     return f"{days} days in {country}. Interests: {interests_str}."
 
-# ----- Endpoint -----
 @app.post("/generate-itinerary", response_model=ItineraryResponse)
 async def generate_itinerary(req: ItineraryRequest):
     try:

@@ -76,12 +76,14 @@ function App() {
   }, [list]);
 
   return (
-    <>
+    <div className="app-container">
       <WorldMap selectionList={list} onSelectionChange={setList} />
-      <ItineraryForm countries={list.filter((c) => c.status === "plan")} />
-      <pre>{JSON.stringify(list, null, 2)}</pre>
-    </>
+      <div className="form-overlay">
+        <ItineraryForm countries={list.filter((c) => c.status === "plan")} />
+      </div>
+    </div>
   );
 }
+
 
 export default App;

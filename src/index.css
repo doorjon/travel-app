@@ -1,15 +1,105 @@
 @import "leaflet/dist/leaflet.css";
 
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+
+html, body, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Nunito', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: #0D1368;
+  color: #d1d1d1;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+h1, h2, h3 {
+  color: #DAA22C;
+  margin-top: 0;
+}
+
+
+input[type="text"],
+input[type="number"],
+select {
+  background-color: #1a1f8a;
+  color: #d1d1d1;
+  border: 1px solid #DAA22C;
+  border-radius: 5px;
+  padding: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+  display: block;
+  /* REMOVE THIS: margin-left: 15px; */
+}
+
+button {
+  background-color: #DAA22C;
+  color: #0D1368;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  display: block;
+  /* REMOVE THIS: margin-left: 15px; */
+}
+
+button:hover {
+  background-color: #b8891e;
+}
+
+/* Make the whole app take up the full screen */
+.app-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh; /* Ensures full-screen height */
+  overflow: hidden;
+}
+
+
+/* Style the Leaflet map to fill the container */
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+}
+
+.form-overlay {
+  position: absolute;
+  top: 50%;                 /* center vertically */
+  left: 20px;               /* fixed distance from left edge */
+  transform: translateY(-50%); /* shift it upward by 50% of its own height */
+  background-color: rgba(13, 19, 104, 0.9);
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 350px;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  overflow-y: auto;
+  max-height: 90vh;
+}
+

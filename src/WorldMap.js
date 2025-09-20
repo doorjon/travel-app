@@ -46,7 +46,6 @@ function InteractiveCountries({ selectionList, onChange }) {
 
   const openPopup = useClickPopup();
 
-  // Initialize from selectionList
   useEffect(() => {
     const initial = {};
     selectionList.forEach(({ country, status }) => {
@@ -112,8 +111,9 @@ export default function WorldMap({ selectionList, onSelectionChange }) {
       center={[20, 0]}
       zoom={2}
       minZoom={2}
-      style={{ height: "70vh", width: "100%" }}
+      style={{ height: "100%", width: "100%" }}
     >
+
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; OpenStreetMap contributors'
