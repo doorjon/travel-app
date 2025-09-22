@@ -90,9 +90,9 @@ button:hover {
 
 .form-overlay {
   position: absolute;
-  top: 50%;                 /* center vertically */
-  left: 20px;               /* fixed distance from left edge */
-  transform: translateY(-50%); /* shift it upward by 50% of its own height */
+  top: 50%;  
+  left: 20px;
+  transform: translateY(-50%);
   background-color: rgba(13, 19, 104, 0.9);
   padding: 20px;
   border-radius: 8px;
@@ -119,5 +119,29 @@ button:hover {
   margin-bottom: 10px;
 }
 
+.form-toggle-button {
+  position: absolute;
+  left: 250px; 
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1001;
+}
 
+.form-toggle-button button {
+  background-color: #DAA22C;
+  color: #0D1368;
+  border: none;
+  border-radius: 50%;
+  padding: 0px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: bold;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 40px;
+  height: 40px;
+}
 
+.form-toggle-button button:hover {
+  background-color: #b8891e;
+}

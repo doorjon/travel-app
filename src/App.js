@@ -64,7 +64,6 @@ function ItineraryForm({ countries }) {
         rows={1}
       />
 
-
       <button onClick={handleGenerate}>Generate</button>
 
       {result && (
@@ -83,19 +82,33 @@ function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [isFormVisible, setIsFormVisible] = useState(true); // State to manage form visibility
+
   useEffect(() => {
     localStorage.setItem("countrySelections", JSON.stringify(list));
   }, [list]);
 
+  const toggleFormVisibility = () => {
+    setIsFormVisible(!isFormVisible); // Toggle visibility
+  };
+
   return (
     <div className="app-container">
       <WorldMap selectionList={list} onSelectionChange={setList} />
-      <div className="form-overlay">
-        <ItineraryForm countries={list.filter((c) => c.status === "plan")} />
+      <div className="form-container">
+        {isFormVisible && (
+          <div className="form-overlay">
+            <ItineraryForm countries={list.filter((c) => c.status === "plan")} />
+          </div>
+        )}
+        <div className="form-toggle-button">
+          <button onClick={toggleFormVisibility}>
+            {isFormVisible ? "←" : "→"}
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
 
 export default App;
