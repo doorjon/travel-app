@@ -14,18 +14,19 @@ async function fetchItinerary(country, days, interests) {
   return data.itinerary;
 }
 
-function ItineraryForm({ countries }) {
+function ItineraryForm({ countries, setResult, setIsModalOpen }) {
   const [country, setCountry] = useState("");
   const [days, setDays] = useState();
   const [interests, setInterests] = useState("");
-  const [result, setResult] = useState("");
+  //const [result, setResult] = useState("");
+  //const [isModalOpen, setIsModalOpen] = useState(false);
 
   const textareaRef = useRef(null);
 
   const handleInput = (e) => {
     const el = textareaRef.current;
-    el.style.height = "auto"; // Reset to auto so scrollHeight works correctly
-    el.style.height = `${el.scrollHeight}px`; // Expand to fit content
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
     setInterests(e.target.value);
   };
 
@@ -33,7 +34,9 @@ function ItineraryForm({ countries }) {
     const interestList = interests.split(",").map((i) => i.trim());
     const itinerary = await fetchItinerary(country, days, interestList);
     setResult(itinerary);
+    setIsModalOpen(true);
   };
+
 
   return (
     <div style={{ marginTop: 20 }}>
@@ -66,12 +69,7 @@ function ItineraryForm({ countries }) {
 
       <button onClick={handleGenerate}>Generate</button>
 
-      {result && (
-        <div>
-          <h3>Itinerary</h3>
-          <pre>{result}</pre>
-        </div>
-      )}
+      
     </div>
   );
 }
@@ -82,30 +80,61 @@ function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const [isFormVisible, setIsFormVisible] = useState(true); // State to manage form visibility
+  const [isFormVisible, setIsFormVisible] = useState(true);
+  const [result, setResult] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
 
   useEffect(() => {
     localStorage.setItem("countrySelections", JSON.stringify(list));
   }, [list]);
 
   const toggleFormVisibility = () => {
-    setIsFormVisible(!isFormVisible); // Toggle visibility
+    setIsFormVisible(!isFormVisible);
   };
+
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(result);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
 
   return (
     <div className="app-container">
       <WorldMap selectionList={list} onSelectionChange={setList} />
       <div className="form-container">
-        {isFormVisible && (
-          <div className="form-overlay">
-            <ItineraryForm countries={list.filter((c) => c.status === "plan")} />
-          </div>
-        )}
+        <div className={`form-overlay ${isFormVisible ? "visible" : "hidden"}`}>
+          <ItineraryForm
+            countries={list.filter((c) => c.status === "plan")}
+            setResult={setResult}
+            setIsModalOpen={setIsModalOpen}
+          />
+
+        </div>
+
         <div className="form-toggle-button">
           <button onClick={toggleFormVisibility}>
             {isFormVisible ? "←" : "→"}
           </button>
         </div>
+
+        {isModalOpen && (
+          <div className="modal-overlay" onClick={() => setIsModalOpen(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <button className="modal-close" onClick={() => setIsModalOpen(false)}>×</button>
+              <h3>Itinerary</h3>
+              <button onClick={handleCopy}>
+                {copied ? "Copied!" : "Copy"}
+              </button>
+
+              <pre>{result}</pre>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );

@@ -49,7 +49,6 @@ select {
   margin-bottom: 10px;
   box-sizing: border-box;
   display: block;
-  /* REMOVE THIS: margin-left: 15px; */
 }
 
 button {
@@ -66,23 +65,19 @@ button {
   margin-top: 10px;
   margin-bottom: 10px;
   display: block;
-  /* REMOVE THIS: margin-left: 15px; */
 }
 
 button:hover {
   background-color: #b8891e;
 }
 
-/* Make the whole app take up the full screen */
 .app-container {
   position: relative;
   width: 100vw;
-  height: 100vh; /* Ensures full-screen height */
+  height: 100vh;
   overflow: hidden;
 }
 
-
-/* Style the Leaflet map to fill the container */
 .leaflet-container {
   width: 100%;
   height: 100%;
@@ -90,9 +85,10 @@ button:hover {
 
 .form-overlay {
   position: absolute;
-  top: 50%;  
-  left: 20px;
-  transform: translateY(-50%);
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%) translateX(0);
+  transition: transform 0.4s ease-in-out;
   background-color: rgba(13, 19, 104, 0.9);
   padding: 20px;
   border-radius: 8px;
@@ -103,6 +99,13 @@ button:hover {
   max-height: 90vh;
 }
 
+.form-overlay.hidden {
+  transform: translateY(-50%) translateX(-120%);
+}
+
+.form-overlay.visible {
+  transform: translateY(-50%) translateX(0);
+}
 .interests-textarea {
   background-color: #1a1f8a;
   color: #d1d1d1;
@@ -121,11 +124,17 @@ button:hover {
 
 .form-toggle-button {
   position: absolute;
-  left: 250px; 
+  left: 225px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 1001;
+  transition: left 0.4s ease-in-out;
 }
+
+.form-overlay.hidden + .form-toggle-button {
+  left: 20px;
+}
+
 
 .form-toggle-button button {
   background-color: #DAA22C;
@@ -144,4 +153,72 @@ button:hover {
 
 .form-toggle-button button:hover {
   background-color: #b8891e;
+}
+
+/* === Modal Overlay Fade-In === */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+
+  animation: fadeIn 0.3s ease-out;
+}
+
+.modal-content {
+  background-color: #0D1368;
+  color: #d1d1d1;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 80vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  position: relative;
+
+  animation: slideInUp 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    background-color: rgba(0, 0, 0, 0);
+  }
+  to {
+    background-color: rgba(0, 0, 0, 0.6);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: #DAA22C;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.modal-content pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-family: 'Courier New', monospace;
 }
