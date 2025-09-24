@@ -20,6 +20,7 @@ function ItineraryForm({ countries, setResult, setIsModalOpen }) {
   const [interests, setInterests] = useState("");
   //const [result, setResult] = useState("");
   //const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const textareaRef = useRef(null);
 
@@ -31,11 +32,22 @@ function ItineraryForm({ countries, setResult, setIsModalOpen }) {
   };
 
   const handleGenerate = async () => {
+    if (!country || !days || !interests.trim()) return;
+
+    setLoading(true);
     const interestList = interests.split(",").map((i) => i.trim());
-    const itinerary = await fetchItinerary(country, days, interestList);
-    setResult(itinerary);
-    setIsModalOpen(true);
-  };
+    try {
+      const itinerary = await fetchItinerary(country, days, interestList);
+      setResult(itinerary);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Error generating itinerary:", error);
+      // show an error message here
+    } finally {
+      setLoading(false);
+    }
+};
+
 
 
   return (
@@ -67,7 +79,9 @@ function ItineraryForm({ countries, setResult, setIsModalOpen }) {
         rows={1}
       />
 
-      <button onClick={handleGenerate}>Generate</button>
+      <button onClick={handleGenerate} disabled={loading}>
+        {loading ? "Generating..." : "Generate"}
+      </button>
 
       
     </div>
@@ -101,19 +115,29 @@ function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+   const resetAllCountries = () => {
+    setList([]);
+  };
+
+
 
   return (
     <div className="app-container">
       <WorldMap selectionList={list} onSelectionChange={setList} />
       <div className="form-container">
         <div className={`form-overlay ${isFormVisible ? "visible" : "hidden"}`}>
-          <ItineraryForm
-            countries={list.filter((c) => c.status === "plan")}
-            setResult={setResult}
-            setIsModalOpen={setIsModalOpen}
-          />
+        <ItineraryForm
+          countries={list.filter((c) => c.status === "plan")}
+          setResult={setResult}
+          setIsModalOpen={setIsModalOpen}
+        />
 
-        </div>
+        {/* Reset button */}
+        <button onClick={resetAllCountries} style={{ marginTop: "10px" }}>
+          Reset Map
+        </button>
+      </div>
+
 
         <div className="form-toggle-button">
           <button onClick={toggleFormVisibility}>

@@ -16,10 +16,12 @@ function useClickPopup() {
     if (popupRef.current) map.closePopup(popupRef.current);
 
     const html = `
-      <div style="font-size:13px">
-        <button class="popup-btn" data-choice="visited">Visited</button>
-        <button class="popup-btn" data-choice="plan">Plan to visit</button>
-      </div>`;
+  <div style="font-size:13px">
+    <button class="popup-btn" data-choice="visited">Visited</button>
+    <button class="popup-btn" data-choice="plan">Plan to visit</button>
+    <button class="popup-btn" data-choice="reset">Reset</button>
+  </div>`;
+
 
     popupRef.current = L.popup()
       .setLatLng(latlng)
@@ -56,7 +58,14 @@ function InteractiveCountries({ selectionList, onChange }) {
 
   const handleClick = (e, countryName) => {
     openPopup(e.latlng, (status) => {
-      const next = { ...choices, [countryName]: status };
+      let next = { ...choices };
+
+      if (status === "none") {
+        delete next[countryName];
+      } else {
+        next[countryName] = status;
+      }
+
       setChoices(next);
 
       const formattedList = Object.entries(next).map(([country, status]) => ({
@@ -64,6 +73,7 @@ function InteractiveCountries({ selectionList, onChange }) {
         status,
       }));
       onChange(formattedList);
+
     });
   };
 
