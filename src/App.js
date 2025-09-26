@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef } from "react";
 import WorldMap from "./WorldMap";
 
-async function fetchItinerary(country, days, interests) {
+async function fetchItinerary(country, days, interests, arrivalDate) {
   const res = await fetch("http://localhost:8000/generate-itinerary", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ country, days, interests }),
+    body: JSON.stringify({ country, days, interests, arrivalDate }),
   });
 
   const data = await res.json();
@@ -18,6 +18,7 @@ function ItineraryForm({ countries, setResult, setIsModalOpen }) {
   const [country, setCountry] = useState("");
   const [days, setDays] = useState();
   const [interests, setInterests] = useState("");
+  const [arrivalDate, setArrivalDate] = useState("");
   //const [result, setResult] = useState("");
   //const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -37,7 +38,7 @@ function ItineraryForm({ countries, setResult, setIsModalOpen }) {
     setLoading(true);
     const interestList = interests.split(",").map((i) => i.trim());
     try {
-      const itinerary = await fetchItinerary(country, days, interestList);
+      const itinerary = await fetchItinerary(country, days, interestList, arrivalDate);
       setResult(itinerary);
       setIsModalOpen(true);
     } catch (error) {
@@ -61,6 +62,13 @@ function ItineraryForm({ countries, setResult, setIsModalOpen }) {
           </option>
         ))}
       </select>
+
+      <input
+        type="date"
+        value={arrivalDate}
+        onChange={(e) => setArrivalDate(e.target.value)}
+      />
+
 
       <input
         type="number"

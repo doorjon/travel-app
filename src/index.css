@@ -160,7 +160,6 @@ button:hover {
   background-color: #b8891e;
 }
 
-/* === Modal Overlay Fade-In === */
 .modal-overlay {
   position: fixed;
   top: 0;
