@@ -39,7 +39,7 @@ The traveller is interested in: {interests}.
 Return only the itinerary, no extra commentary.
 Use bullet points for each day and include practical tips (transport, best neighbourhoods, local dishes to try). Do not include a packing list for each location.
 At the beginning of the itinerary, include a short summary of the expected climate during the trip.
-At the end of the itinerary, include a single, comprehensive packing list covering the entire trip, based on the climate and activities.
+At the end of the itinerary, include a single, comprehensive packing list covering the entire trip, based on the climate and activities. Assume that the user wants to pack as light as possible.
 Keep the tone friendly and concise."""
 
 
@@ -68,8 +68,8 @@ async def generate_itinerary(req: ItineraryRequest):
         response = client.chat.complete(
             model="mistral-tiny",
             messages=messages,
-            temperature=0.7,
-            max_tokens=1200,
+            temperature=0.5,
+            max_tokens=1800,
         )
 
         itinerary = response.choices[0].message.content.strip()
