@@ -129,7 +129,7 @@ button:hover {
 
 .form-toggle-button {
   position: absolute;
-  left: 225px;
+  left: 245px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 1001;
@@ -225,4 +225,19 @@ button:hover {
   white-space: pre-wrap;
   word-wrap: break-word;
   font-family: 'Courier New', monospace;
+}
+
+input[type="date"] {
+  background-color: #1a1f8a;
+  color: #d1d1d1;
+  border: 1px solid #DAA22C;
+  border-radius: 5px;
+  padding: 10px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+  display: block;
 }
