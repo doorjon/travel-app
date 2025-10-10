@@ -34,13 +34,21 @@ if not MISTRAL_KEY:
 client = Mistral(api_key=MISTRAL_KEY)
 
 SYSTEM_PROMPT = """You are an experienced travel planner.
-Create a day-by-day itinerary for the given country and number of days.
-The traveller is interested in: {interests}.
-Return only the itinerary, no extra commentary.
-Use bullet points for each day and include practical tips (transport, best neighbourhoods, local dishes to try). Do not include a packing list for each location.
-At the beginning of the itinerary, include a short summary of the expected climate during the trip.
-At the end of the itinerary, include a single, comprehensive packing list covering the entire trip, based on the climate and activities. Assume that the user wants to pack as light as possible.
-Keep the tone friendly and concise."""
+
+Your output must follow this exact structure:
+
+1. Climate Summary  
+2. Day-by-Day Itinerary  
+3. Packing List
+
+Each section should be clearly labeled.  
+
+- Use bullet points for each day's itinerary.
+- Include practical tips (transport, best neighbourhoods, local dishes).
+- Packing list should be a single list covering the entire trip, based on the climate and activities.
+- Do not include a packing list per day.
+- Be friendly and concise."""
+
 
 
 def build_user_prompt(country: str, days: int, interests: List[str], climate: str) -> str:
@@ -102,40 +110,51 @@ def get_country_coords(country_name: str):
         return None
 
 async def get_climate_info(country: str, arrivalDate: str) -> str:
-    import datetime, httpx
+    import datetime
+    import httpx
 
     coords = get_country_coords(country)
     if not coords:
         return "Climate data unavailable"
 
-    date_obj = datetime.datetime.strptime(arrivalDate, "%Y-%m-%d")
-    year_month = date_obj.strftime("%Y-%m")
-    month_index = date_obj.month  # 1–12
+    try:
+        # Assume typical conditions from 2022 for this date range
+        date_obj = datetime.datetime.strptime(arrivalDate, "%Y-%m-%d")
+        end_date = date_obj + datetime.timedelta(days=6)  # Assuming 1-week trip
+        start_date_str = f"2022-{date_obj.month:02d}-{date_obj.day:02d}"
+        end_date_str = f"2022-{end_date.month:02d}-{end_date.day:02d}"
 
-    url = (
-        f"https://climate-api.open-meteo.com/v1/climate?"
-        f"latitude={coords['lat']}&longitude={coords['lon']}"
-        f"&monthly_temperature_2m_mean=true&monthly_precipitation_sum=true"
-    )
+        url = (
+            f"https://historical-forecast-api.open-meteo.com/v1/forecast?"
+            f"latitude={coords['lat']}&longitude={coords['lon']}"
+            f"&start_date={start_date_str}&end_date={end_date_str}"
+            f"&hourly=temperature_2m,precipitation"
+            f"&temperature_unit=celsius&precipitation_unit=mm"
+        )
 
-    async with httpx.AsyncClient() as client:
-        r = await client.get(url, timeout=10)
-        r.raise_for_status()
-        data = r.json()
+        async with httpx.AsyncClient() as client:
+            r = await client.get(url, timeout=10)
+            r.raise_for_status()
+            data = r.json()
 
-    print("🌦 Open-Meteo response:", data)
+        temperatures = data.get("hourly", {}).get("temperature_2m", [])
+        precipitations = data.get("hourly", {}).get("precipitation", [])
 
-    monthly = data.get("monthly")
-    if monthly:
-        tavg_list = monthly.get("temperature_2m_mean", [])
-        rain_list = monthly.get("precipitation_sum", [])
-        if tavg_list and rain_list and len(tavg_list) >= month_index and len(rain_list) >= month_index:
-            tavg = tavg_list[month_index - 1]
-            rain = rain_list[month_index - 1]
-            return f"{coords['capital']} climate in {year_month}: Avg temp {tavg:.1f}°C, {rain:.1f} mm rain"
+        if temperatures and precipitations:
+            avg_temp = sum(temperatures) / len(temperatures)
+            total_rain = sum(precipitations)
+            return (
+                f"{coords['capital']} historical climate (based on 2022 data) "
+                f"for your trip period: Avg temp {avg_temp:.1f}°C, total rainfall {total_rain:.1f} mm"
+            )
+
+    except Exception as e:
+        print(f"Error fetching historical climate: {e}")
 
     # fallback
-    return get_generic_climate(country, month_index)
+    date_obj = datetime.datetime.strptime(arrivalDate, "%Y-%m-%d")
+    return get_generic_climate(country, date_obj.month)
+
 
 def get_generic_climate(country_name: str, month: int) -> str:
     if month in [12, 1, 2]:
