@@ -12,33 +12,34 @@ function useClickPopup() {
   const map = useMap();
   const popupRef = useRef(null);
 
-  const open = (latlng, onChoice) => {
-    if (popupRef.current) map.closePopup(popupRef.current);
+  const open = (latlng, countryName, onChoice) => { 
+  if (popupRef.current) map.closePopup(popupRef.current);
 
-    const html = `
-  <div style="font-size:13px">
-    <button class="popup-btn" data-choice="visited">Visited</button>
-    <button class="popup-btn" data-choice="plan">Plan to visit</button>
-    <button class="popup-btn" data-choice="reset">Reset</button>
-  </div>`;
+  const html = `
+    <div style="font-size:13px">
+      <strong>${countryName}</strong><br/><br/>
+      <button class="popup-btn" data-choice="visited">Visited</button>
+      <button class="popup-btn" data-choice="plan">Plan to visit</button>
+      <button class="popup-btn" data-choice="reset">Reset</button>
+    </div>`;
 
+  popupRef.current = L.popup()
+    .setLatLng(latlng)
+    .setContent(html)
+    .openOn(map);
 
-    popupRef.current = L.popup()
-      .setLatLng(latlng)
-      .setContent(html)
-      .openOn(map);
+  setTimeout(() => {
+    document.querySelectorAll(".popup-btn").forEach((btn) =>
+      btn.addEventListener("click", (e) => {
+        const choice = e.target.dataset.choice;
+        onChoice(choice);
+        map.closePopup(popupRef.current);
+        popupRef.current = null;
+      })
+    );
+  }, 10);
+};
 
-    setTimeout(() => {
-      document.querySelectorAll(".popup-btn").forEach((btn) =>
-        btn.addEventListener("click", (e) => {
-          const choice = e.target.dataset.choice;
-          onChoice(choice);
-          map.closePopup(popupRef.current);
-          popupRef.current = null;
-        })
-      );
-    }, 10);
-  };
 
   return open;
 }
@@ -57,10 +58,10 @@ function InteractiveCountries({ selectionList, onChange }) {
   }, [selectionList]);
 
   const handleClick = (e, countryName) => {
-    openPopup(e.latlng, (status) => {
+    openPopup(e.latlng, countryName, (status) => {
       let next = { ...choices };
 
-      if (status === "none") {
+      if (status === "none" || status === "reset") {
         delete next[countryName];
       } else {
         next[countryName] = status;
@@ -73,9 +74,9 @@ function InteractiveCountries({ selectionList, onChange }) {
         status,
       }));
       onChange(formattedList);
-
     });
   };
+
 
   const style = (feature) => {
     const status = choices[feature.properties.name];
