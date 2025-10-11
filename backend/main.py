@@ -45,6 +45,7 @@ Your output must follow this exact structure:
 Each section should be clearly labeled.  
 
 - Use bullet points for each day's itinerary.
+- Each day's heading should start with the city name only (e.g., "Day 3: Tokyo"), not phrases like "Arrival in Tokyo".
 - Include practical tips (transport, best neighbourhoods, local dishes).
 - Packing list should be a single list covering the entire trip, based on the climate and activities.
 - Do not include a packing list per day.
@@ -115,13 +116,19 @@ def extract_cities(itinerary_text: str, country: str) -> List[str]:
     cities = []
 
     for match in matches:
-        if ',' in match:
-            match = match.split(',')[0]
-        city = match.strip()
+        # Remove leading phrases like "Arrival in", "Transfer to", "Depart from"
+        cleaned = re.sub(r'^(Arrival in|Transfer to|Depart(?:ure)? from|Drive to|Fly to|Travel to)\s+', '', match, flags=re.IGNORECASE)
+
+        # Handle possible comma-separated details
+        if ',' in cleaned:
+            cleaned = cleaned.split(',')[0]
+
+        city = cleaned.strip()
         if city and city.lower() != country.lower():
             cities.append(city)
 
-    return list(set(cities))  # Unique cities
+    return list(set(cities))
+
 
 def get_city_coords(city: str, country: str):
     try:
