@@ -1,6 +1,7 @@
 import os
 import pycountry
 import traceback
+import re
 from countryinfo import CountryInfo
 from geopy.geocoders import Nominatim
 from mistralai import Mistral
@@ -65,12 +66,10 @@ def build_user_prompt(country: str, days: int, interests: List[str], climate: st
 @app.post("/generate-itinerary", response_model=ItineraryResponse)
 async def generate_itinerary(req: ItineraryRequest):
     try:
-        climate = await get_climate_info(req.country, req.arrivalDate)
-        print("Climate info passed to LLM:", climate)
-
+        # STEP 1: Generate initial itinerary without climate info
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": build_user_prompt(req.country, req.days, req.interests, climate)},
+            {"role": "user", "content": build_user_prompt(req.country, req.days, req.interests, "No climate data yet.")},
         ]
 
         response = client.chat.complete(
@@ -80,8 +79,28 @@ async def generate_itinerary(req: ItineraryRequest):
             max_tokens=1800,
         )
 
-        itinerary = response.choices[0].message.content.strip()
-        return ItineraryResponse(itinerary=itinerary)
+        initial_itinerary = response.choices[0].message.content.strip()
+
+        # STEP 2: Extract cities and get detailed climate summary
+        climate_summary = await build_citywise_climate_summary(initial_itinerary, req.country, req.arrivalDate)
+        print("City-specific climate summary:", climate_summary)
+
+        # STEP 3: Regenerate itinerary with real climate data
+        final_prompt = build_user_prompt(req.country, req.days, req.interests, climate_summary)
+
+        final_response = client.chat.complete(
+            model="mistral-tiny",
+            messages=[
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": final_prompt},
+            ],
+            temperature=0.5,
+            max_tokens=1800,
+        )
+
+        final_itinerary = final_response.choices[0].message.content.strip()
+        return ItineraryResponse(itinerary=final_itinerary)
+
     except Exception as e:
         print("Backend error:", e)
         traceback.print_exc()
@@ -118,7 +137,6 @@ async def get_climate_info(country: str, arrivalDate: str) -> str:
         return "Climate data unavailable"
 
     try:
-        # Assume typical conditions from 2022 for this date range
         date_obj = datetime.datetime.strptime(arrivalDate, "%Y-%m-%d")
         end_date = date_obj + datetime.timedelta(days=6)  # Assuming 1-week trip
         start_date_str = f"2022-{date_obj.month:02d}-{date_obj.day:02d}"
@@ -166,3 +184,75 @@ def get_generic_climate(country_name: str, month: int) -> str:
     else:
         season = "autumn"
     return f"Generally {season} conditions, with moderate temperatures and occasional rainfall."
+
+def extract_cities(itinerary_text: str, country: str) -> List[str]:
+    pattern = re.compile(r'Day \d+: (.*?)\n', re.IGNORECASE)
+    matches = pattern.findall(itinerary_text)
+    cities = []
+
+    for match in matches:
+        if ',' in match:
+            match = match.split(',')[0]
+        city = match.strip()
+        if city and city.lower() != country.lower():
+            cities.append(city)
+
+    return list(set(cities))  # Unique cities
+
+def get_city_coords(city: str, country: str):
+    try:
+        location = geolocator.geocode(f"{city}, {country}")
+        if location:
+            return {"city": city, "lat": location.latitude, "lon": location.longitude}
+    except Exception as e:
+        print(f"Failed to get location for {city}, {country}: {e}")
+    return None
+
+async def get_city_climate(lat: float, lon: float, arrivalDate: str) -> str:
+    import datetime
+    import httpx
+
+    try:
+        date_obj = datetime.datetime.strptime(arrivalDate, "%Y-%m-%d")
+        end_date = date_obj + datetime.timedelta(days=6)
+        start_date_str = f"2022-{date_obj.month:02d}-{date_obj.day:02d}"
+        end_date_str = f"2022-{end_date.month:02d}-{end_date.day:02d}"
+
+        url = (
+            f"https://historical-forecast-api.open-meteo.com/v1/forecast?"
+            f"latitude={lat}&longitude={lon}"
+            f"&start_date={start_date_str}&end_date={end_date_str}"
+            f"&hourly=temperature_2m,precipitation"
+            f"&temperature_unit=celsius&precipitation_unit=mm"
+        )
+
+        async with httpx.AsyncClient() as client:
+            r = await client.get(url, timeout=10)
+            r.raise_for_status()
+            data = r.json()
+
+        temps = data.get("hourly", {}).get("temperature_2m", [])
+        rain = data.get("hourly", {}).get("precipitation", [])
+        if temps and rain:
+            avg_temp = sum(temps) / len(temps)
+            total_rain = sum(rain)
+            return f"Avg temp: {avg_temp:.1f}°C, Rainfall: {total_rain:.1f} mm"
+
+    except Exception as e:
+        print(f"Error fetching weather for city: {e}")
+
+    return "Climate data unavailable"
+
+async def build_citywise_climate_summary(itinerary_text: str, country: str, arrivalDate: str):
+    cities = extract_cities(itinerary_text, country)
+    summaries = []
+
+    for city in cities:
+        coords = get_city_coords(city, country)
+        if coords:
+            climate = await get_city_climate(coords['lat'], coords['lon'], arrivalDate)
+            summaries.append(f"{city}: {climate}")
+        else:
+            summaries.append(f"{city}: Climate data unavailable")
+
+    return "\n".join(summaries)
