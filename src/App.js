@@ -1,20 +1,19 @@
 import { useState, useEffect, useRef } from "react";
 import WorldMap from "./WorldMap";
+import ImageSlideshow from "./ImageSlideshow";
 
 async function fetchItinerary(country, days, interests, arrivalDate) {
   const res = await fetch("http://localhost:8000/generate-itinerary", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ country, days, interests, arrivalDate }),
   });
 
   const data = await res.json();
-  return data.itinerary;
+  return data;
 }
 
-function ItineraryForm({ countries, setResult, setIsModalOpen }) {
+function ItineraryForm({ countries, setResult, setIsModalOpen, setImages }) {
   const [country, setCountry] = useState("");
   const [days, setDays] = useState();
   const [interests, setInterests] = useState("");
@@ -38,16 +37,17 @@ function ItineraryForm({ countries, setResult, setIsModalOpen }) {
     setLoading(true);
     const interestList = interests.split(",").map((i) => i.trim());
     try {
-      const itinerary = await fetchItinerary(country, days, interestList, arrivalDate);
+      const { itinerary, images: cityImages } = await fetchItinerary(country, days, interestList, arrivalDate);
       setResult(itinerary);
+      setImages(cityImages);
       setIsModalOpen(true);
     } catch (error) {
       console.error("Error generating itinerary:", error);
-      // show an error message here
     } finally {
       setLoading(false);
     }
-};
+  };
+
 
 
 
@@ -105,6 +105,7 @@ function App() {
   const [isFormVisible, setIsFormVisible] = useState(true);
   const [result, setResult] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [images, setImages] = useState({});
 
 
   useEffect(() => {
@@ -138,6 +139,7 @@ function App() {
           countries={list.filter((c) => c.status === "plan")}
           setResult={setResult}
           setIsModalOpen={setIsModalOpen}
+          setImages={setImages}
         />
 
         {/* Reset button */}
@@ -163,6 +165,8 @@ function App() {
               </button>
 
               <pre>{result}</pre>
+
+              <ImageSlideshow images={Object.values(images).flat()} />
             </div>
           </div>
         )}

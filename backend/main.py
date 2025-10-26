@@ -9,6 +9,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List
+import httpx
 
 app = FastAPI()
 
@@ -28,6 +29,7 @@ class ItineraryRequest(BaseModel):
 
 class ItineraryResponse(BaseModel):
     itinerary: str
+    images: dict
 
 MISTRAL_KEY = os.getenv("MISTRAL_API_KEY")
 if not MISTRAL_KEY:
@@ -84,23 +86,30 @@ async def generate_itinerary(req: ItineraryRequest):
 
         # STEP 2: Extract cities and get detailed climate summary
         climate_summary = await build_citywise_climate_summary(initial_itinerary, req.country, req.arrivalDate)
-        print("City-specific climate summary:", climate_summary)
+        cities = extract_cities(initial_itinerary, req.country)
+
+        # Fetch images for each city
+        images = {}
+        for city in cities:
+            images[city] = await fetch_images(city)
 
         # STEP 3: Regenerate itinerary with real climate data
         final_prompt = build_user_prompt(req.country, req.days, req.interests, climate_summary)
 
         final_response = client.chat.complete(
             model="mistral-tiny",
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": final_prompt},
-            ],
+            messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": final_prompt}],
             temperature=0.5,
             max_tokens=1800,
         )
 
         final_itinerary = final_response.choices[0].message.content.strip()
-        return ItineraryResponse(itinerary=final_itinerary)
+
+        print("Cities extracted:", cities)
+        print("Images fetched:", images)
+
+        
+        return ItineraryResponse(itinerary=final_itinerary, images=images)
 
     except Exception as e:
         print("Backend error:", e)
@@ -187,3 +196,21 @@ async def build_citywise_climate_summary(itinerary_text: str, country: str, arri
             summaries.append(f"{city}: Climate data unavailable")
 
     return "\n".join(summaries)
+
+UNSPLASH_ACCESS_KEY = os.getenv("UNSPLASH_ACCESS_KEY")
+if not UNSPLASH_ACCESS_KEY:
+    raise RuntimeError("UNSPLASH_ACCESS_KEY not found in env vars")
+
+async def fetch_images(city: str) -> List[str]:
+    try:
+        url = f"https://api.unsplash.com/search/photos?query={city}&client_id={UNSPLASH_ACCESS_KEY}&per_page=5"
+        async with httpx.AsyncClient() as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            data = response.json()
+        
+        image_urls = [photo['urls']['regular'] for photo in data.get('results', [])]
+        return image_urls
+    except Exception as e:
+        print(f"Error fetching images for {city}: {e}")
+        return []
